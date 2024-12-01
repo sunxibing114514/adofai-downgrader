@@ -81,7 +81,12 @@ async function processFile() {
                 delete data.decorations;
             }
 
-            // 格式化 actions: 每个 floor 独立成一行，无空行
+            // 保持 angleData 在一行
+            if (data.angleData) {
+                data.angleData = JSON.stringify(data.angleData).slice(1, -1); // 转换为单行 JSON 数组
+            }
+
+            // 格式化 actions: 每个 floor 独立成一行
             if (data.actions) {
                 data.actions = data.actions.map(action => JSON.stringify(action)).join(",\n ");
             }
@@ -89,7 +94,13 @@ async function processFile() {
             // 手动构造 JSON 字符串以控制格式
             let processedData = JSON.stringify(data, null, 4);
 
-            // 替换 actions 的部分，确保换行符合需求
+            // 修复 angleData 格式，恢复到一行
+            processedData = processedData.replace(
+                /"angleData": \[\s*([\s\S]*?)\s*\]/,
+                (match, group) => `"angleData": [${group.replace(/\s+/g, "")}]`
+            );
+
+            // 修复 actions 格式，保证 floor 不出现转义符号
             processedData = processedData.replace(
                 /"actions": \[\s*(.*?)\s*\]/s,
                 `"actions": [\n ${data.actions}\n]`
