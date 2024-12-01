@@ -81,12 +81,14 @@ async function processFile() {
                 delete data.decorations;
             }
 
-            // 将 JSON 数据转换回字符串
-            // 保持单行 JSON 格式化
-            const processedData = JSON.stringify(data, null, 0);
+            // 自定义格式化逻辑
+            const formattedData = JSON.stringify(data, null, 4) // 基础缩进
+                .replace(/(\[\n\s*)(\{[^]*?\})(,\n\s*\{[^]*?\})*(\n\s*\])/g, function (match) {
+                    return match.replace(/\n\s*/g, " "); // 将 actions 的每个对象压缩为单行
+                });
 
             // 创建新的文件下载链接
-            const blob = new Blob([processedData], { type: "application/json" });
+            const blob = new Blob([formattedData], { type: "application/json" });
             const url = URL.createObjectURL(blob);
 
             const downloadLink = document.createElement("a");
@@ -104,7 +106,7 @@ async function processFile() {
     };
 
     reader.readAsText(file);
-}   
+}
     </script>
 </body>
 </html>
