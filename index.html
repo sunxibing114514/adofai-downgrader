@@ -41,56 +41,60 @@
             "PositionTrack",
         ];
 
-        async function processFile() {
-            const fileInput = document.getElementById("fileInput");
-            const deleteDecorations = document.getElementById("deleteDecorations").checked;
+async function processFile() {
+    const fileInput = document.getElementById("fileInput");
+    const deleteDecorations = document.getElementById("deleteDecorations").checked;
 
-            if (!fileInput.files[0]) {
-                alert("Please select a file!");
-                return;
+    if (!fileInput.files[0]) {
+        alert("Please select a file!");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+        try {
+            // 解析 JSON
+            const data = JSON.parse(event.target.result);
+
+            // 过滤 actions
+            if (data.actions) {
+                data.actions = data.actions.filter(action => 
+                    supportedActions.includes(action.eventType)
+                );
             }
 
-            const file = fileInput.files[0];
-            const reader = new FileReader();
+            // 删除 decorations
+            if (deleteDecorations) {
+                delete data.decorations;
+            }
 
-            reader.onload = function(event) {
-                try {
-                    // 解析 JSON
-                    const data = JSON.parse(event.target.result);
+            // 确保 angleData 保持单行
+            if (Array.isArray(data.angleData)) {
+                data.angleData = JSON.stringify(data.angleData).replace(/^\[|]$/g, '').split(',').map(Number);
+            }
 
-                    // 过滤 actions
-                    if (data.actions) {
-                        data.actions = data.actions.filter(action => 
-                            supportedActions.includes(action.eventType)
-                        );
-                    }
+            // 转换为字符串并创建下载链接
+            const processedData = JSON.stringify(data, null, 4).replace(/(?<=\["[^"]*?)\\n(?=[^"]*"\])/g, '');
+            const blob = new Blob([processedData], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
 
-                    // 删除 decorations
-                    if (deleteDecorations) {
-                        delete data.decorations;
-                    }
+            const downloadLink = document.createElement("a");
+            downloadLink.href = url;
+            downloadLink.download = file.name.replace(".adofai", "_old.adofai");
+            downloadLink.textContent = "Download Converted File";
 
-                    // 转换为字符串并创建下载链接
-                    const processedData = JSON.stringify(data, null, 4);
-                    const blob = new Blob([processedData], { type: "application/json" });
-                    const url = URL.createObjectURL(blob);
-
-                    const downloadLink = document.createElement("a");
-                    downloadLink.href = url;
-                    downloadLink.download = file.name.replace(".adofai", "_old.adofai");
-                    downloadLink.textContent = "Download Converted File";
-
-                    const linkContainer = document.getElementById("downloadLink");
-                    linkContainer.innerHTML = ""; // 清空旧链接
-                    linkContainer.appendChild(downloadLink);
-                } catch (error) {
-                    alert("Invalid ADOFAI file or processing error!");
-                    console.error(error);
-                }
-            };
-
-            reader.readAsText(file);
+            const linkContainer = document.getElementById("downloadLink");
+            linkContainer.innerHTML = ""; // 清空旧链接
+            linkContainer.appendChild(downloadLink);
+        } catch (error) {
+            alert("Invalid ADOFAI file or processing error!");
+            console.error(error);
         }
-    </script>
+    };
+
+    reader.readAsText(file);
+}    </script>
 </body>
 </html>
