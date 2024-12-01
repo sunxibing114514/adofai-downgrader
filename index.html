@@ -81,25 +81,19 @@ async function processFile() {
                 delete data.decorations;
             }
 
-            // 格式化 angleData: 强制其在一行
-            if (data.angleData) {
-                data.angleData = JSON.stringify(data.angleData).replace(/^\[|\]$/g, "");
-                data.angleData = `[${data.angleData}]`;
-            }
-
-            // 格式化 actions: 每个 floor 单独成一行
+            // 格式化 actions: 每个 floor 独立成一行
             if (data.actions) {
-                data.actions = data.actions.map(action =>
-                    JSON.stringify(action)
-                );
-                data.actions = `[${data.actions.join(",\n ")}]`;
+                data.actions = `[${data.actions.map(action => JSON.stringify(action)).join(",\n ")}]`;
             }
 
             // 手动构造 JSON 字符串以控制格式
-            let processedData = `{\n`;
-            processedData += `    "angleData": ${data.angleData},\n`;
-            processedData += `    "actions": ${data.actions}\n`;
-            processedData += `}`;
+            let processedData = JSON.stringify(data, null, 4);
+
+            // 替换 actions 的部分，确保换行符合需求
+            processedData = processedData.replace(
+                /"actions": \[\s*(.*?)\s*\]/s,
+                `"actions": ${data.actions}`
+            );
 
             // 创建新的文件下载链接
             const blob = new Blob([processedData], { type: "application/json" });
@@ -120,7 +114,7 @@ async function processFile() {
     };
 
     reader.readAsText(file);
-}      
+}
     </script>
 </body>
 </html>
