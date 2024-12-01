@@ -55,29 +55,40 @@ async function processFile() {
 
     reader.onload = function(event) {
         try {
-            // 解析 JSON
-            const data = JSON.parse(event.target.result);
+            // 读取文件内容
+            let content = event.target.result;
 
-            // 过滤 actions
+            // 将内容解析为 JSON 对象
+            const data = JSON.parse(content);
+
+            // 删除 actions 中不支持的事件类型
+            const supportedActions = [
+                "SetSpeed", "Twirl", "Checkpoint", "SetHitsound", "SetPlanetRotation",
+                "CustomBackground", "Flash", "MoveTrack", "Pause", "RecolorTrack",
+                "ScaleTrack", "SetFilter", "SetCameraOffset", "SetAngleOffset",
+                "PositionTrack",
+            ];
+
             if (data.actions) {
-                data.actions = data.actions.filter(action => 
+                data.actions = data.actions.filter(action =>
                     supportedActions.includes(action.eventType)
                 );
             }
 
-            // 删除 decorations
+            // 如果用户勾选删除装饰，移除 decorations
             if (deleteDecorations) {
                 delete data.decorations;
             }
 
-            // 确保 angleData 保持单行
-            if (Array.isArray(data.angleData)) {
-                data.angleData = JSON.stringify(data.angleData).replace(/^\[|]$/g, '').split(',').map(Number);
-            }
+            // 替换原 JSON 中的 actions 部分（只修改 actions）
+            const modifiedActions = JSON.stringify(data.actions, null, 2);
+            content = content.replace(
+                /"actions":\s*\[.*?\]/s,
+                `"actions": ${modifiedActions}`
+            );
 
-            // 转换为字符串并创建下载链接
-            const processedData = JSON.stringify(data, null, 4).replace(/(?<=\["[^"]*?)\\n(?=[^"]*"\])/g, '');
-            const blob = new Blob([processedData], { type: "application/json" });
+            // 创建新的文件下载链接
+            const blob = new Blob([content], { type: "application/json" });
             const url = URL.createObjectURL(blob);
 
             const downloadLink = document.createElement("a");
@@ -95,6 +106,6 @@ async function processFile() {
     };
 
     reader.readAsText(file);
-}    </script>
+}</script>
 </body>
 </html>
