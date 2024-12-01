@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADOFAI Downgrader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            margin: 20px auto;
+            display: inline-block;
+        }
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ADOFAI Downgrader</h1>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" accept=".adofai" required>
+        <label>
+            <input type="checkbox" id="deleteDecorations">
+            Remove Decorations
+        </label>
+        <button type="button" onclick="processFile()">Upload & Convert</button>
+    </form>
+    <div id="downloadLink"></div>
+    <script>
+        const supportedActions = [
+            "SetSpeed", "Twirl", "Checkpoint", "SetHitsound", "SetPlanetRotation",
+            "CustomBackground", "Flash", "MoveTrack", "Pause", "RecolorTrack",
+            "ScaleTrack", "SetFilter", "SetCameraOffset", "SetAngleOffset",
+            "PositionTrack",
+        ];
+
+        async function processFile() {
+            const fileInput = document.getElementById("fileInput");
+            const deleteDecorations = document.getElementById("deleteDecorations").checked;
+
+            if (!fileInput.files[0]) {
+                alert("Please select a file!");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                try {
+                    // 解析 JSON
+                    const data = JSON.parse(event.target.result);
+
+                    // 过滤 actions
+                    if (data.actions) {
+                        data.actions = data.actions.filter(action => 
+                            supportedActions.includes(action.eventType)
+                        );
+                    }
+
+                    // 删除 decorations
+                    if (deleteDecorations) {
+                        delete data.decorations;
+                    }
+
+                    // 转换为字符串并创建下载链接
+                    const processedData = JSON.stringify(data, null, 4);
+                    const blob = new Blob([processedData], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+
+                    const downloadLink = document.createElement("a");
+                    downloadLink.href = url;
+                    downloadLink.download = file.name.replace(".adofai", "_old.adofai");
+                    downloadLink.textContent = "Download Converted File";
+
+                    const linkContainer = document.getElementById("downloadLink");
+                    linkContainer.innerHTML = ""; // 清空旧链接
+                    linkContainer.appendChild(downloadLink);
+                } catch (error) {
+                    alert("Invalid ADOFAI file or processing error!");
+                    console.error(error);
+                }
+            };
+
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
